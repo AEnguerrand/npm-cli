@@ -200,30 +200,40 @@ const verifyProvenance = async (subject, provenancePath) => {
   let provenanceBundle
   try {
     provenanceBundle = JSON.parse(await readFile(provenancePath))
+    console.log('Provenance Bundle:', JSON.stringify(provenanceBundle, null, 2))
   } catch (err) {
     err.message = `Invalid provenance provided: ${err.message}`
+    console.error(err.message)
     throw err
   }
 
   const payload = extractProvenance(provenanceBundle)
+  console.log('Payload:', JSON.stringify(payload, null, 2))
+
   if (!payload.subject || !payload.subject.length) {
+    console.error('No subject found in sigstore bundle payload')
     throw new Error('No subject found in sigstore bundle payload')
   }
   if (payload.subject.length > 1) {
+    console.error('Found more than one subject in the sigstore bundle payload')
     throw new Error('Found more than one subject in the sigstore bundle payload')
   }
 
   const bundleSubject = payload.subject[0]
+  console.log('Bundle Subject:', JSON.stringify(bundleSubject, null, 2))
+  console.log('Subject:', JSON.stringify(subject, null, 2))
+
   if (subject.name !== bundleSubject.name) {
-    throw new Error(
-      `Provenance subject ${bundleSubject.name} does not match the package: ${subject.name}`
-    )
+    console.error(`Provenance subject ${bundleSubject.name} does not match the package: ${subject.name}`)
+    throw new Error(`Provenance subject ${bundleSubject.name} does not match the package: ${subject.name}`)
   }
   if (subject.digest.sha512 !== bundleSubject.digest.sha512) {
+    console.error('Provenance subject digest does not match the package')
     throw new Error('Provenance subject digest does not match the package')
   }
 
   await sigstore.verify(provenanceBundle)
+  console.log('Provenance verified successfully')
   return provenanceBundle
 }
 
